@@ -1,4 +1,5 @@
 pipeline {
+
   agent any
 
   stages {
@@ -10,7 +11,7 @@ pipeline {
     }
     stage('Test') {
       steps {
-        sh 'docker run my-flask-app python -m pytest app/test/'
+        sh 'docker run my-flask-app python -m pytest app/tests/'
       }
     }
     stage('Deploy') {
@@ -21,10 +22,22 @@ pipeline {
         }
       }
     }
+
+    stage('Deploy to Kubernetes') {
+      steps {
+        script {
+          withCredentials([file(credentialsId: 'kubernetes-config-file', variable: 'KUBECONFIG')]) {
+                        sh 'kubectl apply -f deploy/deployment.yaml'
+                        sh 'kubectl apply -f deploy/service.yaml'
+          }
+        }
+      }
+    }
+
   }
-  post {
+   post {
     always {
       sh 'docker logout'
     }
-  }
+   }
 }
