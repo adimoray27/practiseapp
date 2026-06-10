@@ -1,5 +1,4 @@
 pipeline {
-
   agent any
 
   stages {
@@ -9,15 +8,21 @@ pipeline {
         sh 'docker tag my-flask-app $DOCKER_BFLASK_IMAGE'
       }
     }
+
     stage('Test') {
       steps {
         sh 'docker run my-flask-app python -m pytest app/test/'
       }
     }
+
     stage('Deploy') {
       steps {
-        withCredentials([usernamePassword(credentialsId: "${DOCKER_REGISTRY_CREDS}", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-          sh "echo \$DOCKER_PASSWORD | docker login -u \$DOCKER_USERNAME --password-stdin docker.io"
+        withCredentials([usernamePassword(
+          credentialsId: "${DOCKER_REGISTRY_CREDS}",
+          passwordVariable: 'DOCKER_PASSWORD',
+          usernameVariable: 'DOCKER_USERNAME'
+        )]) {
+          sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin docker.io'
           sh 'docker push $DOCKER_BFLASK_IMAGE'
         }
       }
@@ -25,19 +30,22 @@ pipeline {
 
     stage('Deploy to Kubernetes') {
       steps {
-        script {
-          withCredentials([file(credentialsId: 'kubernetes-config-file', variable: 'KUBECONFIG')]) {
-                        sh 'kubectl apply -f deploy/deployment.yaml'
-                        sh 'kubectl apply -f deploy/service.yaml'
-          }
+        withCredentials([
+          file(credentialsId: 'kubernetes-config-file', variable: 'KUBECONFIG'),
+          [$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-access-creds']
+        ]) {
+          sh 'aws sts get-caller-identity'
+          sh 'kubectl get nodes'
+          sh 'kubectl apply -f deploy/deployment.yaml'
+          sh 'kubectl apply -f deploy/service.yaml'
         }
       }
     }
-
   }
-   post {
+
+  post {
     always {
-      sh 'docker logout'
+      sh 'docker logout || true'
     }
-   }
+  }
 }
