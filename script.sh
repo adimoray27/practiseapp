@@ -1,3 +1,4 @@
+#hi
 #!/bin/bash
 # This script installs Jenkins on an Ubuntu server
 
