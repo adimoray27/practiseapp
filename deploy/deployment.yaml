@@ -18,4 +18,4 @@ spec:
       - name: my-flask-app
         image: adi144/practiseapp:latest #The Docker image
         ports:
-        - containerPort: 80
+        - containerPort: 5000
