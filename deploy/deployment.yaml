@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
       - name: my-flask-app
-        image: adi144/my_web_app_image:latest #adi144/practiseapp:latest #The Docker image
+        image: adi144/practiseapp:latest #The Docker image
         ports:
         - containerPort: 5000
